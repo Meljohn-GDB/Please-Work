@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,13 +43,15 @@
         th, td { 
             border: 1px solid #f89ed4; 
             padding: 8px; 
+            overflow: hidden;
+            text-overflow: ellipsis;
             text-align: left; 
         }
         tr {
            background-color: #f5b1da;
         }
         th { 
-            background: #f5b1da; 
+            background: #fdd1eb; 
         }
         th i {
             margin-right: 5px;
@@ -185,6 +188,9 @@
 </head>
 
 <script>
+
+
+
 function repeatToLength(str, len) {
     let s = '';
     while (s.length < len) s += str + ' ';
@@ -261,7 +267,7 @@ window.addEventListener('DOMContentLoaded', setBooksBorder);
     <!-- Display Books -->
     <div id="display-section" class="hidden">
         <h2>All Books</h2>
-<table>
+<table id="booksTable">
   <thead>
     <tr>
       <th><i class="fas fa-id-badge"></i> ID</th>
@@ -288,243 +294,8 @@ window.addEventListener('DOMContentLoaded', setBooksBorder);
         <div id="searchResult"></div>
     </div>
 
-    <!-- Issue Book Modal -->
-    <div id="issue-modal" class="hidden">
-        <h3>Issue Book</h3>
-        <form id="issueBookForm">
-            <input type="hidden" id="issue-book-id">
-            <div class="form-group">
-                <label for="issue-person">Name of person:</label>
-                <input type="text" id="issue-person" required>
-            </div>
-            <button type="submit">Issue</button>
-            <button type="button" onclick="closeIssueModal()">Cancel</button>
-        </form>
-        <div id="issueMsg"></div>
-    </div>
-
-    <script>
-        // Book data structure
-        class Book {
-            constructor(id, title, author) {
-                this.id = id;
-                this.title = title;
-                this.author = author;
-                this.is_issued = false;
-                this.issued_to = "None";
-            }
-        }
-
-        // Library controls
-        const MAX_BOOKS = 20;
-        let books = [];
-
-        // UI support functions
-        function showSection(section) {
-            hideSections();
-            document.getElementById(section + '-section').classList.remove('hidden');
-            if (section === 'display') renderBooksTable();
-        }
-        function hideSections() {
-            document.getElementById('add-section').classList.add('hidden');
-            document.getElementById('display-section').classList.add('hidden');
-            document.getElementById('search-section').classList.add('hidden');
-            document.getElementById('issue-modal').classList.add('hidden');
-            document.getElementById('addBookMsg').textContent = '';
-            document.getElementById('searchResult').textContent = '';
-            document.getElementById('issueMsg').textContent = '';
-        }
-
-        // Add Book
-        document.getElementById('addBookForm').onsubmit = function(e) {
-            e.preventDefault();
-            if (books.length >= MAX_BOOKS) {
-                document.getElementById('addBookMsg').textContent = "Library is full. Cannot add more books.";
-                return;
-            }
-            const title = document.getElementById('add-title').value.trim();
-            const author = document.getElementById('add-author').value.trim();
-            if (!title || !author) return;
-            const newId = books.length ? books[books.length - 1].id + 1 : 1;
-            books.push(new Book(newId, title, author));
-            document.getElementById('addBookMsg').textContent = "Book added successfully!";
-            document.getElementById('addBookForm').reset();
-            renderBooksTable();
-        };
-
-        // Display Books
-        function renderBooksTable() {
-            const tbody = document.querySelector('#booksTable tbody');
-            tbody.innerHTML = '';
-            if (books.length === 0) {
-                document.getElementById('noBooksMsg').textContent = "No books in the library.";
-                return;
-            }
-            document.getElementById('noBooksMsg').textContent = "";
-            books.forEach(book => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${book.id}</td>
-                    <td>${book.title}</td>
-                    <td>${book.author}</td>
-                    <td>${book.is_issued ? "Issued" : "Available"}</td>
-                    <td>${book.issued_to}</td>
-                    <td class="actions">
-                        <button onclick="showIssueModal(${book.id})" ${book.is_issued ? "disabled" : ""}>Issue</button>
-                        <button onclick="deleteBook(${book.id})">Delete</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Search Book
-        document.getElementById('searchBookForm').onsubmit = function(e) {
-            e.preventDefault();
-            const searchTitle = document.getElementById('search-title').value.trim().toLowerCase();
-            const found = books.find(b => b.title.toLowerCase() === searchTitle);
-            const resultDiv = document.getElementById('searchResult');
-            if (found) {
-                resultDiv.innerHTML = `
-                    <b>Book found!</b><br>
-                    ID: ${found.id}<br>
-                    Title: ${found.title}<br>
-                    Author: ${found.author}<br>
-                    Status: ${found.is_issued ? "Issued" : "Available"}<br>
-                    Issued To: ${found.issued_to}
-                `;
-            } else {
-                resultDiv.textContent = "Book not found.";
-            }
-        };
-
-        // Issue Book
-        function showIssueModal(id) {
-            document.getElementById('issue-book-id').value = id;
-            document.getElementById('issue-modal').classList.remove('hidden');
-            document.getElementById('issue-person').value = '';
-            document.getElementById('issueMsg').textContent = '';
-        }
-        function closeIssueModal() {
-            document.getElementById('issue-modal').classList.add('hidden');
-        }
-        document.getElementById('issueBookForm').onsubmit = function(e) {
-            e.preventDefault();
-            const id = parseInt(document.getElementById('issue-book-id').value);
-            const person = document.getElementById('issue-person').value.trim();
-            const book = books.find(b => b.id === id);
-            if (!book) {
-                document.getElementById('issueMsg').textContent = "Invalid book ID.";
-                return;
-            }
-            if (book.is_issued) {
-                document.getElementById('issueMsg').textContent = "Book is already issued.";
-                return;
-            }
-            book.issued_to = person;
-            book.is_issued = true;
-            document.getElementById('issueMsg').textContent = "Book issued successfully!";
-            renderBooksTable();
-            setTimeout(closeIssueModal, 1000);
-        };
-
-        // Delete Book
-        function deleteBook(id) {
-            if (!confirm("Are you sure you want to delete this book?")) return;
-            books = books.filter(b => b.id !== id);
-            // Reassign IDs to keep them sequential
-            books.forEach((b, i) => b.id = i + 1);
-            renderBooksTable();
-        }
-
-        // Initial display
-        showSection('display');
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Library Management System</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 30px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background: #f2f2f2; }
-        .actions button { margin-right: 5px; }
-        .hidden { display: none; }
-        .form-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 4px; }
-        input[type="text"] { width: 100%; padding: 6px; }
-    </style>
-</head>
-<body>
-    <h1>Library Management System</h1>
-    <div>
-        <button onclick="showSection('add')">Add a new book</button>
-        <button onclick="showSection('display')">Display all books</button>
-        <button onclick="showSection('search')">Search for a book by title</button>
-    </div>
-
-    <!-- Add Book Form -->
-    <div id="add-section" class="hidden">
-        <h2>Add a New Book</h2>
-        <form id="addBookForm">
-            <div class="form-group">
-                <label for="add-title">Title:</label>
-                <input type="text" id="add-title" required>
-            </div>
-            <div class="form-group">
-                <label for="add-author">Author:</label>
-                <input type="text" id="add-author" required>
-            </div>
-            <button type="submit">Add Book</button>
-            <button type="button" onclick="hideSections()">Cancel</button>
-        </form>
-        <div id="addBookMsg"></div>
-    </div>
-
-    <!-- Display Books -->
-    <div id="display-section" class="hidden">
-        <h2>All Books</h2>
-        <table id="booksTable">
-            <thead>
-                <tr>
-                    <th>ID</th><th>Title</th><th>Author</th><th>Status</th><th>Issued To</th><th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <div id="noBooksMsg"></div>
-    </div>
-
-    <!-- Search Book -->
-    <div id="search-section" class="hidden">
-        <h2>Search Book by Title</h2>
-        <form id="searchBookForm">
-            <input type="text" id="search-title" placeholder="Enter book title" required>
-            <button type="submit">Search</button>
-            <button type="button" onclick="hideSections()">Cancel</button>
-        </form>
-        <div id="searchResult"></div>
-    </div>
-
-    <!-- Issue Book Modal -->
-    <div id="issue-modal" class="hidden">
-        <h3>Issue Book</h3>
-        <form id="issueBookForm">
-            <input type="hidden" id="issue-book-id">
-            <div class="form-group">
-                <label for="issue-person">Name of person:</label>
-                <input type="text" id="issue-person" required>
-            </div>
-            <button type="submit">Issue</button>
-            <button type="button" onclick="closeIssueModal()">Cancel</button>
-        </form>
-        <div id="issueMsg"></div>
-    </div>
-
-<div class="image-marquee">
+    <!-- Marquee -->
+     <div class="image-marquee">
 <div class="image-marquee-track">
     <img src="https://i.imgur.com/WMROXEv.png" alt="Going insane" />
     <img src="https://i.imgur.com/WMROXEv.png" alt="Going insane" />
@@ -573,6 +344,20 @@ window.addEventListener('DOMContentLoaded', setBooksBorder);
 
 </div>
 </div>
+    <!-- Issue Book Modal -->
+    <div id="issue-modal" class="hidden">
+        <h3>Issue Book</h3>
+        <form id="issueBookForm">
+            <input type="hidden" id="issue-book-id">
+            <div class="form-group">
+                <label for="issue-person">Name of person:</label>
+                <input type="text" id="issue-person" required>
+            </div>
+            <button type="submit">Issue</button>
+            <button type="button" onclick="closeIssueModal()">Cancel</button>
+        </form>
+        <div id="issueMsg"></div>
+    </div>
 
     <script>
         // Book data structure
@@ -586,11 +371,11 @@ window.addEventListener('DOMContentLoaded', setBooksBorder);
             }
         }
 
-        // Library logic
+        // Library controls
         const MAX_BOOKS = 20;
         let books = [];
 
-        // UI helpers
+        // UI support functions
         function showSection(section) {
             hideSections();
             document.getElementById(section + '-section').classList.remove('hidden');
